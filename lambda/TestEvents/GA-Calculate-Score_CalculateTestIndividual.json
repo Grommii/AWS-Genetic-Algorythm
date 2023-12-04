@@ -1,0 +1,93 @@
+{
+  "Records": [
+    {
+      "messageId": "19dd0b57-b21e-4ac1-bd88-01bbb068cb78",
+      "receiptHandle": "MessageReceiptHandle",
+      "body": {
+		"generation": "10",
+		"birthtime": "20231201000000",
+		"run_id": 1,
+		"birth_action": "mutated", 
+		"parents": [
+		  {
+		    "id": "1234567899"
+		  }
+		],
+		"id": "1234567890",
+		"genes": [
+		  {
+			"id": "1", 
+			"properties": {
+			  "value": "1"
+			}
+		  },
+		  {
+			"id": "2", 
+			"properties": {
+			  "value": "2"
+			}
+		  },
+		  {
+			"id": "3", 
+			"properties": {
+			  "value": "3"
+			}
+		  },
+		  {
+			"id": "4", 
+			"properties": {
+			  "value": "4"
+			}
+		  },
+		  {
+			"id": "5", 
+			"properties": {
+			  "value": "5"
+			}
+		  },
+		  {
+			"id": "6", 
+			"properties": {
+			  "value": "6"
+			}
+		  },
+		  {
+			"id": "7", 
+			"properties": {
+			  "value": "7"
+			}
+		  },
+		  {
+			"id": "8", 
+			"properties": {
+			  "value": "8"
+			}
+		  },
+		  {
+			"id": "9", 
+			"properties": {
+			  "value": "9"
+			}
+		  },
+		  {
+			"id": "0", 
+			"properties": {
+			  "value": "0"
+			}
+		  }
+		]
+	  },
+      "attributes": {
+        "ApproximateReceiveCount": "1",
+        "SentTimestamp": "1523232000000",
+        "SenderId": "123456789012",
+        "ApproximateFirstReceiveTimestamp": "1523232000001"
+      },
+      "messageAttributes": {},
+      "md5OfBody": "{{{md5_of_body}}}",
+      "eventSource": "aws:sqs",
+      "eventSourceARN": "arn:aws:sqs:us-east-1:123456789012:MyQueue",
+      "awsRegion": "us-east-1"
+    }
+  ]
+}

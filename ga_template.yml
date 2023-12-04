@@ -1,0 +1,1180 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+    An example of Genetic Algorythm implementation in AWS with Lambda functions, SQS and DynamoDB.
+Metadata: 
+  AWS::CloudFormation::Interface: 
+    ParameterGroups: 
+      - Label: 
+          default: "SQS Names:"
+        Parameters: 
+          - SQSQueueAddRandomIndividualName
+          - SQSQueueMutateIndividualName
+          - SQSQueueCrossIndividualsName
+          - SQSQueueEvaluateName
+          - SQSQueueAddToPopulationName
+      - Label: 
+          default: "DynamoDB Table Names:"
+        Parameters: 
+          - DynamoDBGenesTableName
+          - DynamoDBPopulationTableName
+      - Label: 
+          default: "Lambda related Names:"
+Parameters:
+  SQSQueueAddRandomIndividualName:
+    Type: String
+    MinLength: '1'
+    MaxLength: '64'
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9_-]*'
+    Description: The name of the SQS Queue for Add Random Individual
+    Default: SQS-GA-Add-Random-Individual
+  SQSQueueMutateIndividualName:
+    Type: String
+    MinLength: '1'
+    MaxLength: '64'
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9_-]*'
+    Description: The name of the SQS Queue for Mutate Individual
+    Default: SQS-GA-Mutate-Individual
+  SQSQueueCrossIndividualsName:
+    Type: String
+    MinLength: '1'
+    MaxLength: '64'
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9_-]*'
+    Description: The name of the SQS Queue for Cross Individuals
+    Default: SQS-GA-Cross-Individuals
+  SQSQueueEvaluateName:
+    Type: String
+    MinLength: '1'
+    MaxLength: '64'
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9_-]*'
+    Description: The name of the SQS Queue for Evaluation
+    Default: SQS-GA-For-Evaluation
+  SQSQueueAddToPopulationName:
+    Type: String
+    MinLength: '1'
+    MaxLength: '64'
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9_-]*'
+    Description: The name of the SQS Queue to Add to Population
+    Default: SQS-GA-Add-To-Population
+  LambdaFunctionInitiateActionsName:
+    Type: String
+    MinLength: '1'
+    MaxLength: '64'
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9_-]*'
+    Description: The name of the Lambda function for Initiate-Actions
+    Default: GA-Initiate-Actions
+  LambdaRoleInitiateActionsName:
+    Type: String
+    MinLength: '1'
+    MaxLength: '64'
+    AllowedPattern: '[\w+=,.@-]+'
+    Description: The name of the IAM role used as the Lambda execution role for Initiate-Actions
+    Default: Role-GA-Initiate-Actions
+  LambdaPolicyInitiateActionsName:
+    Type: String
+    MinLength: '1'
+    MaxLength: '128'
+    AllowedPattern: '[\w+=,.@-]+'
+    Description: The name of the IAM policy used by Lambda execution role for Initiate-Actions
+    Default: Policy-GA-Initiate-Actions
+  LambdaFunctionAddRandomIndividualName:
+    Type: String
+    MinLength: '1'
+    MaxLength: '64'
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9_-]*'
+    Description: The name of the Lambda function for Add-Random-Individual
+    Default: GA-Add-Random-Individual
+  LambdaRoleAddRandomIndividualName:
+    Type: String
+    MinLength: '1'
+    MaxLength: '64'
+    AllowedPattern: '[\w+=,.@-]+'
+    Description: The name of the IAM role used as the Lambda execution role for Add-Random-Individual
+    Default: Role-GA-Add-Random-Individual
+  LambdaPolicyAddRandomIndividualName:
+    Type: String
+    MinLength: '1'
+    MaxLength: '128'
+    AllowedPattern: '[\w+=,.@-]+'
+    Description: The name of the IAM policy used by Lambda execution role for Add-Random-Individual
+    Default: Policy-GA-Add-Random-Individual
+  LambdaFunctionMutateIndividualName:
+    Type: String
+    MinLength: '1'
+    MaxLength: '64'
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9_-]*'
+    Description: The name of the Lambda function for Mutate-Individual
+    Default: GA-Mutate-Individual
+  LambdaRoleMutateIndividualName:
+    Type: String
+    MinLength: '1'
+    MaxLength: '64'
+    AllowedPattern: '[\w+=,.@-]+'
+    Description: The name of the IAM role used as the Lambda execution role for Mutate-Individual
+    Default: Role-GA-Mutate-Individual
+  LambdaPolicyMutateIndividualName:
+    Type: String
+    MinLength: '1'
+    MaxLength: '128'
+    AllowedPattern: '[\w+=,.@-]+'
+    Description: The name of the IAM policy used by Lambda execution role for Mutate-Individual
+    Default: Policy-GA-Mutate-Individual
+  LambdaFunctionCrossIndividualsName:
+    Type: String
+    MinLength: '1'
+    MaxLength: '64'
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9_-]*'
+    Description: The name of the Lambda function for Cross-Individuals
+    Default: GA-Cross-Individuals
+  LambdaRoleCrossIndividualsName:
+    Type: String
+    MinLength: '1'
+    MaxLength: '64'
+    AllowedPattern: '[\w+=,.@-]+'
+    Description: The name of the IAM role used as the Lambda execution role for Cross-Individuals
+    Default: Role-GA-Cross-Individuals
+  LambdaPolicyCrossIndividualsName:
+    Type: String
+    MinLength: '1'
+    MaxLength: '128'
+    AllowedPattern: '[\w+=,.@-]+'
+    Description: The name of the IAM policy used by Lambda execution role for Cross-Individuals
+    Default: Policy-GA-Cross-Individuals
+  LambdaFunctionEvaluateName:
+    Type: String
+    MinLength: '1'
+    MaxLength: '64'
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9_-]*'
+    Description: The name of the Lambda function for Evaluate
+    Default: GA-Evaluate
+  LambdaRoleEvaluateName:
+    Type: String
+    MinLength: '1'
+    MaxLength: '64'
+    AllowedPattern: '[\w+=,.@-]+'
+    Description: The name of the IAM role used as the Lambda execution role for Evaluate
+    Default: Role-GA-Evaluate
+  LambdaPolicyEvaluateName:
+    Type: String
+    MinLength: '1'
+    MaxLength: '128'
+    AllowedPattern: '[\w+=,.@-]+'
+    Description: The name of the IAM policy used by Lambda execution role for Evaluate
+    Default: Policy-GA-Evaluate
+  LambdaFunctionAddToPopulationName:
+    Type: String
+    MinLength: '1'
+    MaxLength: '64'
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9_-]*'
+    Description: The name of the Lambda function for Add-To-Population
+    Default: GA-Add-To-Population
+  LambdaRoleAddToPopulationName:
+    Type: String
+    MinLength: '1'
+    MaxLength: '64'
+    AllowedPattern: '[\w+=,.@-]+'
+    Description: The name of the IAM role used as the Lambda execution role for Add-To-Population
+    Default: Role-GA-Add-To-Population
+  LambdaPolicyAddToPopulationName:
+    Type: String
+    MinLength: '1'
+    MaxLength: '128'
+    AllowedPattern: '[\w+=,.@-]+'
+    Description: The name of the IAM policy used by Lambda execution role for Add-To-Population
+    Default: Policy-GA-Add-To-Population
+  LambdaFunctionAddToGenesName:
+    Type: String
+    MinLength: '1'
+    MaxLength: '64'
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9_-]*'
+    Description: The name of the Lambda function for Add-To-Genes
+    Default: GA-Add-To-Genes
+  LambdaRoleAddToGenesName:
+    Type: String
+    MinLength: '1'
+    MaxLength: '64'
+    AllowedPattern: '[\w+=,.@-]+'
+    Description: The name of the IAM role used as the Lambda execution role for Add-To-Genes
+    Default: Role-GA-Add-To-Genes
+  LambdaPolicyAddToGenesName:
+    Type: String
+    MinLength: '1'
+    MaxLength: '128'
+    AllowedPattern: '[\w+=,.@-]+'
+    Description: The name of the IAM policy used by Lambda execution role for Add-To-Genes
+    Default: Policy-GA-Add-To-Genes
+  DynamoDBGenesTableName:
+    Type: String
+    MinLength: '1'
+    MaxLength: '255'
+    AllowedPattern: '[a-zA-Z0-9_.-]+'
+    Description: The name of the DynamoDB Table for Genes
+    Default: GA-Genes
+  DynamoDBPopulationTableName:
+    Type: String
+    MinLength: '1'
+    MaxLength: '255'
+    AllowedPattern: '[a-zA-Z0-9_.-]+'
+    Description: The name of the DynamoDB Table for Population
+    Default: GA-Population
+
+Resources:
+  SQSQueueAddRandomIndividual:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Ref SQSQueueAddRandomIndividualName
+
+  SQSQueueMutateIndividual:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Ref SQSQueueMutateIndividualName
+
+  SQSQueueCrossIndividuals:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Ref SQSQueueCrossIndividualsName
+
+  SQSQueueEvaluate:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Ref SQSQueueEvaluateName
+
+  SQSQueueAddToPopulation:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Ref SQSQueueAddToPopulationName
+
+  DynamoDBGenesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref DynamoDBGenesTableName
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: "id"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "id"
+          KeyType: "HASH"
+
+  DynamoDBPopulationTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref DynamoDBPopulationTableName
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: "id"
+          AttributeType: "S"
+        - AttributeName: "run_id"
+          AttributeType: "N"
+        - AttributeName: "score"
+          AttributeType: "N"
+      KeySchema:
+        - AttributeName: "id"
+          KeyType: "HASH"
+      GlobalSecondaryIndexes: 
+        - IndexName: "run_id-score-index"
+          KeySchema: 
+            - AttributeName: "run_id"
+              KeyType: "HASH"
+            - AttributeName: "score"
+              KeyType: "RANGE"
+          Projection: 
+            ProjectionType: "ALL"
+
+  LogGroupInitiateActions:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Join ['',['/aws/lambda/', !Ref LambdaFunctionInitiateActionsName]]
+      RetentionInDays: 30
+
+  LambdaRoleInitiateActions:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref LambdaRoleInitiateActionsName
+      Description: An execution role for a Lambda function for Initiate-Actions
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action:
+          - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Join ['',[!Ref LambdaPolicyInitiateActionsName, '-Logs']]
+          PolicyDocument:
+             Version: 2012-10-17
+             Statement:
+               - Effect: Allow
+                 Action:
+                   - 'logs:CreateLogGroup'
+                 Resource: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:*'
+               - Effect: Allow
+                 Action:
+                   - 'logs:CreateLogStream'
+                   - 'logs:PutLogEvents'
+                 Resource: !Join ['',['arn:', !Ref AWS::Partition, ':logs:', !Ref AWS::Region, ':', !Ref AWS::AccountId, ':log-group:/aws/lambda/', !Ref LambdaFunctionInitiateActionsName, ':*']]
+        - PolicyName: !Join ['',[!Ref LambdaPolicyInitiateActionsName, '-SQS']]
+          PolicyDocument:
+             Version: 2012-10-17
+             Statement:
+               - Effect: Allow
+                 Action:
+                   - 'sqs:SendMessage'
+                 Resource: 
+                   - !Join ['',['arn:', !Ref AWS::Partition, ':sqs:', !Ref AWS::Region, ':', !Ref AWS::AccountId, ':', !Ref SQSQueueAddRandomIndividualName]]
+                   - !Join ['',['arn:', !Ref AWS::Partition, ':sqs:', !Ref AWS::Region, ':', !Ref AWS::AccountId, ':', !Ref SQSQueueMutateIndividualName]]
+                   - !Join ['',['arn:', !Ref AWS::Partition, ':sqs:', !Ref AWS::Region, ':', !Ref AWS::AccountId, ':', !Ref SQSQueueCrossIndividualsName]]
+
+  LambdaFunctionInitiateActions:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Lambda Function to Initiate Actions for Genetic Algorythm
+      FunctionName: !Ref LambdaFunctionInitiateActionsName
+      Handler: index.lambda_handler
+      MemorySize: 128
+      Runtime: python3.11
+      Role: !GetAtt 'LambdaRoleInitiateActions.Arn'
+      Timeout: 3
+      Environment:
+        Variables:
+          SQS_ADD_RANDOM_INDIVIDUAL: !GetAtt 'SQSQueueAddRandomIndividual.QueueUrl'
+          SQS_CROSS_INDIVIDUALS: !GetAtt 'SQSQueueCrossIndividuals.QueueUrl'
+          SQS_MUTATE_INDIVIDUAL: !GetAtt 'SQSQueueMutateIndividual.QueueUrl'
+      Code:
+        ZipFile: |
+            import json
+            import boto3
+            import os
+            
+            sqs = boto3.client('sqs')
+            
+            def lambda_handler(event, context):
+                
+                run_id = event['run_id']
+                json_request = json.dumps({'run_id':run_id})
+                
+                for key,value in event.items():
+                    if key == "get_random":
+                        
+                        print("Initiating get_random:", value)
+                        queue_url = os.environ['SQS_ADD_RANDOM_INDIVIDUAL']
+                        for i in range(value):
+                            sqsresponse = sqs.send_message(
+                                QueueUrl = queue_url,
+                                MessageBody = json_request
+                            )
+                        
+                    elif key == "mutate":
+                        print("Initiating mutate:", value)
+                        queue_url = os.environ['SQS_MUTATE_INDIVIDUAL']
+                        for i in range(value):
+                            sqsresponse = sqs.send_message(
+                                QueueUrl = queue_url,
+                                MessageBody = json_request
+                            )
+                        
+                    elif key == "cross":
+                        print("Initiating cross:", value)
+                        queue_url = os.environ['SQS_CROSS_INDIVIDUALS']
+                        for i in range(value):
+                            sqsresponse = sqs.send_message(
+                                QueueUrl = queue_url,
+                                MessageBody = json_request
+                            )
+                        
+                    elif key == "run_id":
+                        print("Run_id gathered:", value)
+                    else:
+                        print("Unknown action!")
+            
+                
+                return {
+                    'statusCode': 200
+                }
+
+  LogGroupAddRandomIndividual:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Join ['',['/aws/lambda/', !Ref LambdaFunctionAddRandomIndividualName]]
+      RetentionInDays: 30
+
+  LambdaRoleAddRandomIndividual:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref LambdaRoleAddRandomIndividualName
+      Description: An execution role for a Lambda function for Add-Random-Individual
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action:
+          - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Join ['',[!Ref LambdaPolicyAddRandomIndividualName, '-Logs']]
+          PolicyDocument:
+             Version: 2012-10-17
+             Statement:
+               - Effect: Allow
+                 Action:
+                   - 'logs:CreateLogGroup'
+                 Resource: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:*'
+               - Effect: Allow
+                 Action:
+                   - 'logs:CreateLogStream'
+                   - 'logs:PutLogEvents'
+                 Resource: !Join ['',['arn:', !Ref AWS::Partition, ':logs:', !Ref AWS::Region, ':', !Ref AWS::AccountId, ':log-group:/aws/lambda/', !Ref LambdaFunctionAddRandomIndividualName, ':*']]
+        - PolicyName: !Join ['',[!Ref LambdaPolicyAddRandomIndividualName, '-SQS']]
+          PolicyDocument:
+             Version: 2012-10-17
+             Statement:
+               - Effect: Allow
+                 Action:
+                   - 'sqs:ReceiveMessage'
+                   - 'sqs:DeleteMessage'
+                   - 'sqs:GetQueueAttributes'
+                 Resource: !Join ['',['arn:', !Ref AWS::Partition, ':sqs:', !Ref AWS::Region, ':', !Ref AWS::AccountId, ':', !Ref SQSQueueAddRandomIndividualName]]
+               - Effect: Allow
+                 Action:
+                   - 'sqs:SendMessage'
+                 Resource: !Join ['',['arn:', !Ref AWS::Partition, ':sqs:', !Ref AWS::Region, ':', !Ref AWS::AccountId, ':', !Ref SQSQueueEvaluateName]]
+        - PolicyName: !Join ['',[!Ref LambdaPolicyAddRandomIndividualName, '-DDB']]
+          PolicyDocument:
+             Version: 2012-10-17
+             Statement:
+               - Effect: Allow
+                 Action:
+                   - 'dynamodb:Scan'
+                 Resource: !Join ['',['arn:', !Ref AWS::Partition, ':dynamodb:', !Ref AWS::Region, ':', !Ref AWS::AccountId, ':table/', !Ref DynamoDBGenesTableName]]
+
+  LambdaFunctionAddRandomIndividual:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Lambda Function to Get Random Individual for Genetic Algorythm
+      FunctionName: !Ref LambdaFunctionAddRandomIndividualName
+      Handler: index.lambda_handler
+      MemorySize: 128
+      Runtime: python3.11
+      Role: !GetAtt 'LambdaRoleAddRandomIndividual.Arn'
+      Timeout: 3
+      Environment:
+        Variables:
+          DDB_TABLE_GENES: !Ref DynamoDBGenesTableName
+          GA_INDIVIDUAL_GENES: '10'
+          SQS_FOR_EVALUATION: !GetAtt 'SQSQueueEvaluate.QueueUrl'
+      Code:
+        ZipFile: |
+            import boto3
+            import json
+            import random
+            import os
+            from datetime import datetime
+            
+            dynamodb = boto3.resource('dynamodb')
+            table = dynamodb.Table(os.environ['DDB_TABLE_GENES'])
+            
+            sqs = boto3.client('sqs')
+            queue_url = os.environ['SQS_FOR_EVALUATION']
+            
+            def lambda_handler(event, context):
+                
+                response = table.scan()
+                genes = response['Items']
+                msg_body = json.loads(event['Records'][0]['body'])
+            
+                # Create new list with random elements from genes. Elements can repeat in new list.
+                new_genes = random.choices(genes, k = int(os.environ['GA_INDIVIDUAL_GENES']))
+                
+                individ = dict()
+                individ['generation'] = 0
+                individ['birthtime'] = datetime.now().strftime("%Y%m%d%H%M%S")
+                individ['run_id'] = msg_body['run_id']
+                individ['birth_action'] = "generated"
+                individ['genes'] = new_genes
+                
+                individ_id = ""
+                for gen in individ['genes']:
+                    individ_id += gen['id']
+                print("Generated individ:", individ_id)
+                
+                json_individ = json.dumps(individ, default = str)
+                
+                sqsresponse = sqs.send_message(
+                    QueueUrl = queue_url,
+                    MessageBody = json_individ
+                )
+                
+                msgID = sqsresponse['MessageId']
+            
+                # Return a success message
+                return {
+                    'statusCode': 200,
+                    'MessageId': msgID,
+                    'body': json_individ
+                }
+
+  LambdaFunctionAddRandomIndividualEventSource:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      BatchSize: 1
+      EventSourceArn: !GetAtt 'SQSQueueAddRandomIndividual.Arn'
+      FunctionName: !Ref LambdaFunctionAddRandomIndividual
+
+  LogGroupMutateIndividual:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Join ['',['/aws/lambda/', !Ref LambdaFunctionMutateIndividualName]]
+      RetentionInDays: 30
+
+  LambdaRoleMutateIndividual:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref LambdaRoleMutateIndividualName
+      Description: An execution role for a Lambda function for Mutate-Individual
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action:
+          - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Join ['',[!Ref LambdaPolicyMutateIndividualName, '-Logs']]
+          PolicyDocument:
+             Version: 2012-10-17
+             Statement:
+               - Effect: Allow
+                 Action:
+                   - 'logs:CreateLogGroup'
+                 Resource: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:*'
+               - Effect: Allow
+                 Action:
+                   - 'logs:CreateLogStream'
+                   - 'logs:PutLogEvents'
+                 Resource: !Join ['',['arn:', !Ref AWS::Partition, ':logs:', !Ref AWS::Region, ':', !Ref AWS::AccountId, ':log-group:/aws/lambda/', !Ref LambdaFunctionMutateIndividualName, ':*']]
+        - PolicyName: !Join ['',[!Ref LambdaPolicyMutateIndividualName, '-SQS']]
+          PolicyDocument:
+             Version: 2012-10-17
+             Statement:
+               - Effect: Allow
+                 Action:
+                   - 'sqs:ReceiveMessage'
+                   - 'sqs:DeleteMessage'
+                   - 'sqs:GetQueueAttributes'
+                 Resource: !Join ['',['arn:', !Ref AWS::Partition, ':sqs:', !Ref AWS::Region, ':', !Ref AWS::AccountId, ':', !Ref SQSQueueMutateIndividualName]]
+               - Effect: Allow
+                 Action:
+                   - 'sqs:SendMessage'
+                 Resource: !Join ['',['arn:', !Ref AWS::Partition, ':sqs:', !Ref AWS::Region, ':', !Ref AWS::AccountId, ':', !Ref SQSQueueEvaluateName]]
+        - PolicyName: !Join ['',[!Ref LambdaPolicyMutateIndividualName, '-DDB']]
+          PolicyDocument:
+             Version: 2012-10-17
+             Statement:
+               - Effect: Allow
+                 Action:
+                   - 'dynamodb:Scan'
+                 Resource: !Join ['',['arn:', !Ref AWS::Partition, ':dynamodb:', !Ref AWS::Region, ':', !Ref AWS::AccountId, ':table/', !Ref DynamoDBGenesTableName]]
+               - Effect: Allow
+                 Action:
+                   - 'dynamodb:Query'
+                 Resource: !Join ['',['arn:', !Ref AWS::Partition, ':dynamodb:', !Ref AWS::Region, ':', !Ref AWS::AccountId, ':table/', !Ref DynamoDBPopulationTableName, '/index/run_id-score-index']]
+
+  LambdaFunctionMutateIndividual:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Lambda Function to Mutate Individual for Genetic Algorythm
+      FunctionName: !Ref LambdaFunctionMutateIndividualName
+      Handler: index.lambda_handler
+      MemorySize: 128
+      Runtime: python3.11
+      Role: !GetAtt 'LambdaRoleMutateIndividual.Arn'
+      Timeout: 3
+      Environment:
+        Variables:
+          DDB_TABLE_GENES: !Ref DynamoDBGenesTableName
+          DDB_TABLE_POPULATION: !Ref DynamoDBPopulationTableName
+          GA_MUTATE_RATE_PERCENT: '20'
+          GA_POPULATION_SIZE_FOR_MUTATE: '10'
+          SQS_FOR_EVALUATION: !GetAtt 'SQSQueueEvaluate.QueueUrl'
+      Code:
+        ZipFile: |
+            import boto3
+            import json
+            import random
+            import os
+            from datetime import datetime
+            
+            dynamodb = boto3.resource('dynamodb')
+            table_genes = dynamodb.Table(os.environ['DDB_TABLE_GENES'])
+            table_population = dynamodb.Table(os.environ['DDB_TABLE_POPULATION'])
+            
+            sqs = boto3.client('sqs')
+            queue_url = os.environ['SQS_FOR_EVALUATION']
+            
+            def lambda_handler(event, context):
+                
+                msg_body = json.loads(event['Records'][0]['body'])
+                run_id = int(msg_body['run_id'])
+                mutate_rate = int(os.environ['GA_MUTATE_RATE_PERCENT'])
+                is_mutated = False
+                response_genes = table_genes.scan()
+                genes = response_genes['Items']
+            
+                response_population = table_population.query(
+                    IndexName = 'run_id-score-index',
+                    Limit = int(os.environ['GA_POPULATION_SIZE_FOR_MUTATE']),
+                    ScanIndexForward = False,
+                    KeyConditionExpression = 'run_id = :run_id',
+                    ExpressionAttributeValues = {
+                        ":run_id": run_id
+                    },
+                )
+                population = response_population['Items']
+            
+                individ = random.choice(population)
+                print("Chosen individ: ", individ['id'])
+            
+                mutated_individ = dict()
+                mutated_individ['generation'] = individ['generation'] + 1
+                mutated_individ['birthtime'] = datetime.now().strftime("%Y%m%d%H%M%S")
+                mutated_individ['run_id'] = run_id
+                mutated_individ['birth_action'] = "mutated"
+                mutated_individ['parents'] = [{'id':individ['id']}]
+                mutated_individ['id'] = ""
+                mutated_individ['genes'] = individ['genes']
+                
+                is_id_equal = lambda gene, id: gene["id"] == id
+            
+                for index, gen in enumerate(individ['genes']):
+                    
+                    if random.choice(range(100)) < mutate_rate:
+                        new_gene = random.choice(genes)
+                        if individ['genes'][index]['id'] != new_gene['id']:
+                            is_mutated = True
+                        mutated_individ['genes'][index] = new_gene
+                        mutated_individ['id'] += new_gene['id']
+                    else:
+                        id_value = individ['genes'][index]['id']
+                        matching_genes = filter(lambda gene: is_id_equal(gene, id_value), genes)
+                        mutated_individ['genes'][index] = next(matching_genes, None)
+                        mutated_individ['id'] += id_value
+                
+                print("Mutatd individ: ", mutated_individ['id'])
+                
+                if not is_mutated:
+                    return{
+                        'statusCode': 200,
+                        'is_mutated': False
+                    }
+                
+                json_individ = json.dumps(mutated_individ, default = str)
+                
+                sqsresponse = sqs.send_message(
+                    QueueUrl = queue_url,
+                    MessageBody = json_individ
+                )
+                
+                msgID = sqsresponse['MessageId']
+            
+                # Return a success message
+                return {
+                    'statusCode': 200,
+                    'MessageId': msgID,
+                    'body': json_individ,
+                    'is_mutated': True
+                }
+
+  LambdaFunctionMutateIndividualEventSource:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      BatchSize: 1
+      EventSourceArn: !GetAtt 'SQSQueueMutateIndividual.Arn'
+      FunctionName: !Ref LambdaFunctionMutateIndividual
+
+  LogGroupCrossIndividuals:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Join ['',['/aws/lambda/', !Ref LambdaFunctionCrossIndividualsName]]
+      RetentionInDays: 30
+
+  LambdaRoleCrossIndividuals:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref LambdaRoleCrossIndividualsName
+      Description: An execution role for a Lambda function for Cross-Individuals
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action:
+          - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Join ['',[!Ref LambdaPolicyCrossIndividualsName, '-Logs']]
+          PolicyDocument:
+             Version: 2012-10-17
+             Statement:
+               - Effect: Allow
+                 Action:
+                   - 'logs:CreateLogGroup'
+                 Resource: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:*'
+               - Effect: Allow
+                 Action:
+                   - 'logs:CreateLogStream'
+                   - 'logs:PutLogEvents'
+                 Resource: !Join ['',['arn:', !Ref AWS::Partition, ':logs:', !Ref AWS::Region, ':', !Ref AWS::AccountId, ':log-group:/aws/lambda/', !Ref LambdaFunctionCrossIndividualsName, ':*']]
+        - PolicyName: !Join ['',[!Ref LambdaPolicyCrossIndividualsName, '-SQS']]
+          PolicyDocument:
+             Version: 2012-10-17
+             Statement:
+               - Effect: Allow
+                 Action:
+                   - 'sqs:ReceiveMessage'
+                   - 'sqs:DeleteMessage'
+                   - 'sqs:GetQueueAttributes'
+                 Resource: !Join ['',['arn:', !Ref AWS::Partition, ':sqs:', !Ref AWS::Region, ':', !Ref AWS::AccountId, ':', !Ref SQSQueueCrossIndividualsName]]
+               - Effect: Allow
+                 Action:
+                   - 'sqs:SendMessage'
+                 Resource: !Join ['',['arn:', !Ref AWS::Partition, ':sqs:', !Ref AWS::Region, ':', !Ref AWS::AccountId, ':', !Ref SQSQueueEvaluateName]]
+        - PolicyName: !Join ['',[!Ref LambdaPolicyCrossIndividualsName, '-DDB']]
+          PolicyDocument:
+             Version: 2012-10-17
+             Statement:
+               - Effect: Allow
+                 Action:
+                   - 'dynamodb:Scan'
+                 Resource: !Join ['',['arn:', !Ref AWS::Partition, ':dynamodb:', !Ref AWS::Region, ':', !Ref AWS::AccountId, ':table/', !Ref DynamoDBGenesTableName]]
+               - Effect: Allow
+                 Action:
+                   - 'dynamodb:Query'
+                 Resource: !Join ['',['arn:', !Ref AWS::Partition, ':dynamodb:', !Ref AWS::Region, ':', !Ref AWS::AccountId, ':table/', !Ref DynamoDBPopulationTableName, '/index/run_id-score-index']]
+
+  LambdaFunctionCrossIndividuals:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Lambda Function to Cross Individuals for Genetic Algorythm
+      FunctionName: !Ref LambdaFunctionCrossIndividualsName
+      Handler: index.lambda_handler
+      MemorySize: 128
+      Runtime: python3.11
+      Role: !GetAtt 'LambdaRoleCrossIndividuals.Arn'
+      Timeout: 3
+      Environment:
+        Variables:
+          DDB_TABLE_GENES: !Ref DynamoDBGenesTableName
+          DDB_TABLE_POPULATION: !Ref DynamoDBPopulationTableName
+          GA_POPULATION_SIZE_FOR_CROSSING: '10'
+          SQS_FOR_EVALUATION: !GetAtt 'SQSQueueEvaluate.QueueUrl'
+      Code:
+        ZipFile: |
+            import boto3
+            import json
+            import random
+            import os
+            from datetime import datetime
+            
+            dynamodb = boto3.resource('dynamodb')
+            table_genes = dynamodb.Table(os.environ['DDB_TABLE_GENES'])
+            table_population = dynamodb.Table(os.environ['DDB_TABLE_POPULATION'])
+            
+            sqs = boto3.client('sqs')
+            queue_url = os.environ['SQS_FOR_EVALUATION']
+            
+            def lambda_handler(event, context):
+                
+                msg_body = json.loads(event['Records'][0]['body'])
+                run_id = int(msg_body['run_id'])
+                is_crossed = False
+                response_genes = table_genes.scan()
+                genes = response_genes['Items']
+            
+                response_population = table_population.query(
+                    IndexName = 'run_id-score-index',
+                    Limit = int(os.environ['GA_POPULATION_SIZE_FOR_CROSSING']),
+                    ScanIndexForward = False,
+                    KeyConditionExpression = 'run_id = :run_id',
+                    ExpressionAttributeValues = {
+                        ":run_id": run_id
+                    },
+                )
+                population = response_population['Items']
+                individs = random.sample(population, 2)
+                
+                crossed_individ = dict()
+                crossed_individ['generation'] = 0
+                crossed_individ['birthtime'] = datetime.now().strftime("%Y%m%d%H%M%S")
+                crossed_individ['run_id'] = run_id
+                crossed_individ['birth_action'] = "crossed"
+                crossed_individ['parents'] = []
+                crossed_individ['id'] = ""
+                crossed_individ['genes'] = individs[0]['genes']
+                
+                for individ in individs:
+                    print("Chosen individ:", individ['id'])
+                    crossed_individ['parents'].append(individ['id'])
+                    if crossed_individ['generation'] < individ['generation']:
+                        crossed_individ['generation'] = individ['generation']
+                crossed_individ['generation'] += 1
+                
+                
+                is_id_equal = lambda gene, id: gene["id"] == id
+            
+                for index, gen in enumerate(individs[0]['genes']):
+                    new_gene = random.choice(individs)['genes'][index]
+                    crossed_individ['id'] += new_gene['id']
+                    id_value = new_gene['id']
+                    matching_genes = filter(lambda gene: is_id_equal(gene, id_value), genes)
+                    crossed_individ['genes'][index] = next(matching_genes, None)
+                
+                print("Crossd individ:", crossed_individ['id'])
+                
+                is_crossed = True
+                for individ in individs:
+                    if individ['id'] == crossed_individ['id']:
+                        is_crossed = False
+                
+                if not is_crossed:
+                    return{
+                        'statusCode': 200,
+                        'is_crossed': False
+                    }
+                
+                json_individ = json.dumps(crossed_individ, default = str)
+                
+                sqsresponse = sqs.send_message(
+                    QueueUrl = queue_url,
+                    MessageBody = json_individ
+                )
+                
+                msgID = sqsresponse['MessageId']
+            
+                # Return a success message
+                return {
+                    'statusCode': 200,
+                    'MessageId': msgID,
+                    'body': json_individ,
+                    'is_crossed': True
+                }
+
+  LambdaFunctionCrossIndividualsEventSource:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      BatchSize: 1
+      EventSourceArn: !GetAtt 'SQSQueueCrossIndividuals.Arn'
+      FunctionName: !Ref LambdaFunctionCrossIndividuals
+
+  LogGroupEvaluate:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Join ['',['/aws/lambda/', !Ref LambdaFunctionEvaluateName]]
+      RetentionInDays: 30
+
+  LambdaRoleEvaluate:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref LambdaRoleEvaluateName
+      Description: An execution role for a Lambda function for Evaluate
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action:
+          - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Join ['',[!Ref LambdaPolicyEvaluateName, '-Logs']]
+          PolicyDocument:
+             Version: 2012-10-17
+             Statement:
+               - Effect: Allow
+                 Action:
+                   - 'logs:CreateLogGroup'
+                 Resource: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:*'
+               - Effect: Allow
+                 Action:
+                   - 'logs:CreateLogStream'
+                   - 'logs:PutLogEvents'
+                 Resource: !Join ['',['arn:', !Ref AWS::Partition, ':logs:', !Ref AWS::Region, ':', !Ref AWS::AccountId, ':log-group:/aws/lambda/', !Ref LambdaFunctionEvaluateName, ':*']]
+        - PolicyName: !Join ['',[!Ref LambdaPolicyEvaluateName, '-SQS']]
+          PolicyDocument:
+             Version: 2012-10-17
+             Statement:
+               - Effect: Allow
+                 Action:
+                   - 'sqs:ReceiveMessage'
+                   - 'sqs:DeleteMessage'
+                   - 'sqs:GetQueueAttributes'
+                 Resource: !Join ['',['arn:', !Ref AWS::Partition, ':sqs:', !Ref AWS::Region, ':', !Ref AWS::AccountId, ':', !Ref SQSQueueEvaluateName]]
+               - Effect: Allow
+                 Action:
+                   - 'sqs:SendMessage'
+                 Resource: !Join ['',['arn:', !Ref AWS::Partition, ':sqs:', !Ref AWS::Region, ':', !Ref AWS::AccountId, ':', !Ref SQSQueueAddToPopulationName]]
+
+  LambdaFunctionEvaluate:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Lambda Function to Evaluate for Genetic Algorythm
+      FunctionName: !Ref LambdaFunctionEvaluateName
+      Handler: index.lambda_handler
+      MemorySize: 128
+      Runtime: python3.11
+      Role: !GetAtt 'LambdaRoleEvaluate.Arn'
+      Timeout: 3
+      Environment:
+        Variables:
+          SQS_ADD_TO_POPULATION: !GetAtt 'SQSQueueAddToPopulation.QueueUrl'
+      Code:
+        ZipFile: |
+            import json
+            import boto3
+            import os
+            
+            sqs = boto3.client('sqs')
+            queue_url = os.environ['SQS_ADD_TO_POPULATION']
+            
+            def lambda_handler(event, context):
+            
+                individ = json.loads(event['Records'][0]['body'])
+                print(individ)
+                
+            
+                individ_id = ""
+                score = 0
+                individ_for_insert = dict()
+                individ_for_insert['genes'] = []
+            
+                genes = individ['genes']
+                for gen in genes:
+                    individ_id += gen['id'] #+ "#"
+                    individ_for_insert['genes'].append({'id':gen['id']})
+                    score += int(gen['properties']['value'])
+                
+                print("individ_id: ", individ_id)
+                print("score: ", score)
+                
+                individ_for_insert['generation'] = individ['generation']
+                individ_for_insert['birthtime'] = individ['birthtime']
+                individ_for_insert['id'] = individ_id
+                individ_for_insert['score'] = score
+                individ_for_insert['birth_action'] = individ['birth_action']
+                if 'run_id' in individ:
+                    individ_for_insert['run_id'] = individ['run_id']
+                else:
+                    individ_for_insert['run_id'] = 1
+                if 'parents' in individ:
+                    individ_for_insert['parents'] = individ['parents']
+                
+                json_individ = json.dumps(individ_for_insert, default = str)
+                
+                sqsresponse = sqs.send_message(
+                    QueueUrl = queue_url,
+                    MessageBody = json_individ
+                )
+                
+                msgID = sqsresponse['MessageId']
+                
+                return {
+                    'statusCode': 200,
+                    'MessageId': msgID,
+                    'body': json_individ
+                }
+
+  LambdaFunctionEvaluateEventSource:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      BatchSize: 1
+      EventSourceArn: !GetAtt 'SQSQueueEvaluate.Arn'
+      FunctionName: !Ref LambdaFunctionEvaluate
+
+  LogGroupAddToPopulation:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Join ['',['/aws/lambda/', !Ref LambdaFunctionAddToPopulationName]]
+      RetentionInDays: 30
+
+  LambdaRoleAddToPopulation:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref LambdaRoleAddToPopulationName
+      Description: An execution role for a Lambda function for Add-To-Population
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action:
+          - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Join ['',[!Ref LambdaPolicyAddToPopulationName, '-Logs']]
+          PolicyDocument:
+             Version: 2012-10-17
+             Statement:
+               - Effect: Allow
+                 Action:
+                   - 'logs:CreateLogGroup'
+                 Resource: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:*'
+               - Effect: Allow
+                 Action:
+                   - 'logs:CreateLogStream'
+                   - 'logs:PutLogEvents'
+                 Resource: !Join ['',['arn:', !Ref AWS::Partition, ':logs:', !Ref AWS::Region, ':', !Ref AWS::AccountId, ':log-group:/aws/lambda/', !Ref LambdaFunctionAddToPopulationName, ':*']]
+        - PolicyName: !Join ['',[!Ref LambdaPolicyAddToPopulationName, '-SQS']]
+          PolicyDocument:
+             Version: 2012-10-17
+             Statement:
+               - Effect: Allow
+                 Action:
+                   - 'sqs:ReceiveMessage'
+                   - 'sqs:DeleteMessage'
+                   - 'sqs:GetQueueAttributes'
+                 Resource: !Join ['',['arn:', !Ref AWS::Partition, ':sqs:', !Ref AWS::Region, ':', !Ref AWS::AccountId, ':', !Ref SQSQueueAddToPopulationName]]
+        - PolicyName: !Join ['',[!Ref LambdaPolicyAddToPopulationName, '-DDB']]
+          PolicyDocument:
+             Version: 2012-10-17
+             Statement:
+               - Effect: Allow
+                 Action:
+                   - 'dynamodb:PutItem'
+                 Resource: !Join ['',['arn:', !Ref AWS::Partition, ':dynamodb:', !Ref AWS::Region, ':', !Ref AWS::AccountId, ':table/', !Ref DynamoDBPopulationTableName]]
+
+  LambdaFunctionAddToPopulation:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Lambda Function to Add To Population for Genetic Algorythm
+      FunctionName: !Ref LambdaFunctionAddToPopulationName
+      Handler: index.lambda_handler
+      MemorySize: 128
+      Runtime: python3.11
+      Role: !GetAtt 'LambdaRoleAddToPopulation.Arn'
+      Timeout: 3
+      Environment:
+        Variables:
+          DDB_TABLE_POPULATION: !Ref DynamoDBPopulationTableName
+      Code:
+        ZipFile: |
+            import json
+            import boto3
+            import os
+            import botocore
+            
+            dynamodb = boto3.resource('dynamodb')
+            table = dynamodb.Table(os.environ['DDB_TABLE_POPULATION'])
+            
+            def lambda_handler(event, context):
+                
+                individ = json.loads(event['Records'][0]['body'])
+                if isinstance(individ['generation'], str):
+                    individ['generation'] = int(individ['generation'])
+                print(individ)
+                
+                try:
+                    table.put_item(
+                        Item = individ,
+                        ConditionExpression = 'attribute_not_exists(id)'
+                        )
+                except botocore.exceptions.ClientError as e:
+                    if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
+                        raise
+                    print("Insert ignored, because individ already exists.")
+                
+                return {
+                    'statusCode': 200
+                }
+
+  LambdaFunctionAddToPopulationEventSource:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      BatchSize: 1
+      EventSourceArn: !GetAtt 'SQSQueueAddToPopulation.Arn'
+      FunctionName: !Ref LambdaFunctionAddToPopulation
+
+  LogGroupAddToGenes:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Join ['',['/aws/lambda/', !Ref LambdaFunctionAddToGenesName]]
+      RetentionInDays: 30
+
+  LambdaRoleAddToGenes:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref LambdaRoleAddToGenesName
+      Description: An execution role for a Lambda function for Add-To-Genes
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action:
+          - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Join ['',[!Ref LambdaPolicyAddToGenesName, '-Logs']]
+          PolicyDocument:
+             Version: 2012-10-17
+             Statement:
+               - Effect: Allow
+                 Action:
+                   - 'logs:CreateLogGroup'
+                 Resource: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:*'
+               - Effect: Allow
+                 Action:
+                   - 'logs:CreateLogStream'
+                   - 'logs:PutLogEvents'
+                 Resource: !Join ['',['arn:', !Ref AWS::Partition, ':logs:', !Ref AWS::Region, ':', !Ref AWS::AccountId, ':log-group:/aws/lambda/', !Ref LambdaFunctionAddToGenesName, ':*']]
+        - PolicyName: !Join ['',[!Ref LambdaPolicyAddToGenesName, '-DDB']]
+          PolicyDocument:
+             Version: 2012-10-17
+             Statement:
+               - Effect: Allow
+                 Action:
+                   - 'dynamodb:BatchWriteItem'
+                 Resource: !Join ['',['arn:', !Ref AWS::Partition, ':dynamodb:', !Ref AWS::Region, ':', !Ref AWS::AccountId, ':table/', !Ref DynamoDBGenesTableName]]
+
+  LambdaFunctionAddToGenes:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Lambda Function to Add To Genes for Genetic Algorythm
+      FunctionName: !Ref LambdaFunctionAddToGenesName
+      Handler: index.lambda_handler
+      MemorySize: 128
+      Runtime: python3.11
+      Role: !GetAtt 'LambdaRoleAddToGenes.Arn'
+      Timeout: 3
+      Environment:
+        Variables:
+          DDB_TABLE_GENES: !Ref DynamoDBGenesTableName
+      Code:
+        ZipFile: |
+            import boto3
+            import os
+            
+            dynamodb = boto3.resource('dynamodb')
+            table = dynamodb.Table(os.environ['DDB_TABLE_GENES'])
+            
+            def lambda_handler(event, context):
+                
+                with table.batch_writer() as batch:
+                    
+                    # Loop through the range of 0 to 9
+                    for i in range(10):
+                        # Create a record with id and properties fields
+                        record = {
+                            'id': str(i), # Convert i to string
+                            'properties': {
+                                'value': i # Use i as the value
+                            }
+                        }
+                        # Insert the record into the table
+                        batch.put_item(Item=record)
+                
+                # Return a success message
+                return {
+                    'statusCode': 200,
+                    'body': 'Inserted 10 records into genes table'
+                }
